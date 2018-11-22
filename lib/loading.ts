@@ -3,20 +3,21 @@ import ora from 'ora';
 export default class Loading {
 
   private _loading: any;
-  private step: number = 0;
-
+  private step: number = 1;
+  constructor() {
+    this._loading = ora();
+  }
   start(text: string) {
-    this.step++;
-    this._loading = ora(`${this.step}.${text}\n`).start();
+    this._loading.start(`${this.step}.${text}\n`)
     return this;
   }
-  text(text: string) {
-    this._loading.text = `${this.step}.${text}\n`;
+  next(text: string) {
+    this.step++;
+    this._loading.start(`${this.step}.${text}\n`)
     return this;
   }
   fail(text: string) {
-    console.log('\t');
-    this._loading.fail(`\t${text}\n`);
+    this._loading.fail(`\t${text}\n`)
     return this;
   }
   succeed(text: string) {
@@ -24,10 +25,11 @@ export default class Loading {
     return this;
   }
   stop() {
-    if (this._loading) {
-      this._loading.stop();
-    }
-    this._loading = null;
+    this._loading.stop();
     return this;
   }
-}
+  info(text: string) {
+    this._loading.info(text);
+    return this;
+  }
+} 

@@ -1,6 +1,6 @@
 
 module.exports = {
-  rootDir: __dirname + '/../lib',
+  rootDir: __dirname + '/../',
   output: {
     path: __dirname + '/zip',
     filename: `build.zip`,
@@ -12,7 +12,16 @@ module.exports = {
     path: '/home/web/'
   },
   shell: [
-    'ls\n',
-    'exit\n',
-  ].join('')
+    'ls',
+    'exit',
+  ],
+  rules: [
+    {
+      test: /\.ts$/,
+    },
+    {
+      //不包含json结尾的文件
+      test: /((?<!\.json))$/,
+    },
+  ]
 }

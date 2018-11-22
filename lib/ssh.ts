@@ -1,7 +1,6 @@
 import { Client, ConnectConfig, } from 'ssh2';
-import Readline from 'readline';
-import chalk from 'chalk';
 import path from 'path';
+import inquirer from 'inquirer';
 
 export default class SSH {
 
@@ -51,17 +50,19 @@ export default class SSH {
    * 输入密码
    */
   public entryPassword(text: string) {
-    const readline = Readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
     return new Promise((resolve, reject) => {
-      readline.question(chalk.green(text), (password) => {
-        if (password !== null) {
-          this.optionos.password = password;
-          resolve();
+      inquirer.prompt({
+        type: 'password',
+        name: 'type',
+        message: text,
+      }).then((result: any) => {
+        if (result.type != null) {
+          this.optionos.password = result.type;
+          resolve(result.type);
         }
-      })
+      }).catch(err => {
+        reject(err);
+      });
     })
   }
   /**

@@ -1,8 +1,8 @@
-package-lock.json
-node_modules
-.vscode
-dist
 lib
+node_modules
+test
+.gitignore
+.npmignore
+package-lock.json
+.vscode
 tsconfig.json
-webpack.config.js
-*.zip

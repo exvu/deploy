@@ -21,7 +21,8 @@
   "scripts": {
     "test:ts": "DEBUG=* ts-node --files ./lib/bin/deploy --config ./test/deploy.config.js",
     "pretest": "tsc",
-    "test": "node  ./src/bin/deploy --config ./test/deploy.config.js"
+    "test": "node  ./src/bin/deploy --config ./test/deploy.config.js",
+    "publish":"npm publish --access=public"
   },
   "homepage": "https://github.com/exvu/deploy#README.MD",
   "repository": {

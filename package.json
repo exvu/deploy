@@ -19,7 +19,7 @@
     "部署"
   ],
   "scripts": {
-    "test:ts": "DEBUG=* ts-node --files ./lib/bin/deploy --config ./test/deploy.config.js",
+    "test:ts": "cross-env DEBUG=* ts-node --files ./lib/bin/deploy --config ./test/deploy.config.js",
     "pretest": "tsc",
     "test": "node  ./src/bin/deploy --config ./test/deploy.config.js",
     "publish": "npm publish --access=public"
@@ -50,5 +50,9 @@
     "ora": "^3.0.0",
     "ssh2": "^0.6.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "cross-env": "^5.2.0",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.1.6"
+  }
 }

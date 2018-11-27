@@ -1,4 +1,5 @@
 import CommandBin from 'common-bin';
+import filesize from 'filesize';
 import fs from 'fs';
 import path from 'path';
 import Pack from './pack';
@@ -36,7 +37,8 @@ export default class Command extends CommandBin {
         output: configs.output,
         rules: configs.rules,
       })).zip();
-      this.loading.succeed(`打包文件成功,压缩包位置 ${chalk.green(filePath)}`);
+      this.loading.succeed(`打包文件成功
+      \n${filePath} ${chalk.green(filesize(fs.statSync(filePath).size))}`);
       //设置ssh参数
       const ssh = new SSH(configs.server);
       const host = `${configs.server.username}@${configs.server.host}`;

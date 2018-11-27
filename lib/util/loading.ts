@@ -1,4 +1,5 @@
 import ora from 'ora';
+import log from './log';
 
 export default class Loading {
 
@@ -6,6 +7,7 @@ export default class Loading {
   private step: number = 1;
   constructor() {
     this._loading = ora();
+    // this._loading = log();
   }
   start(text: string) {
     this._loading.start(`${this.step}.${text}\n`)

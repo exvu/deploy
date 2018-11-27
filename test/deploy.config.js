@@ -5,12 +5,18 @@ module.exports = {
     path: __dirname + '/zip',
     filename: `build.zip`,
   },
-  server: {
-    host: '127.0.0.1',
-    username: 'exvu',
+  server:{
+    host: 'api.t.yyx-tech.com',
+    username: 'web',
     port: 22,
-    path: '/home/exvu/Project/my-project/js-util/deploy/test/'
+    path: '/home/web/'
   },
+  // server: {
+  //   host: 'api.t.yyx-tech.com',
+  //   username: 'exvu',
+  //   port: 22,
+  //   path: '/home/exvu/Project/my-project/js-util/deploy/test/'
+  // },
   shell: [
     'ls',
     'exit',

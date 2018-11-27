@@ -4,3 +4,8 @@ declare module 'common-bin' {
     start(): void;
   }
 }
+// declare module 'progress' {
+//   export default class Progress {
+//     constructor(options: any);
+//   }
+// }

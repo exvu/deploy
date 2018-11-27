@@ -1,6 +1,7 @@
 import archiver from 'archiver';
 import fs from 'fs';
 import path from 'path';
+import filesize from 'filesize';
 
 
 interface Option {
@@ -15,6 +16,8 @@ export default class Pack {
 
   private options: Option;
   private files: Array<string> = [];
+  private packUtil:any;
+  private listener:Array<any>=[];
   constructor(_option: any) {
     let {
       rootDir, output: { path: outputPath, filename }
@@ -24,7 +27,7 @@ export default class Pack {
     if (!fs.existsSync(outputPath)) {
       fs.mkdirSync(outputPath);
     }
-    if(fs.existsSync(filePath)){
+    if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath)
     }
     for (let { test, } of rules) {
@@ -35,6 +38,7 @@ export default class Pack {
         test = new RegExp(test);
       }
     }
+    this.packUtil = archiver('zip');
     this.options = {
       rootDir: path.normalize(rootDir),
       rules,
@@ -45,11 +49,17 @@ export default class Pack {
     }
     this.matchFile();
   }
+  on(name:string,callback: any){
+    if(name=='init'){
+      this.listener.push(callback);
+    }
+    this.packUtil.on(name,callback);
+    return this;
+  }
   /**
    * 压缩文件
    */
   zip() {
-    const zip = archiver('zip');
     return new Promise((resolve, reject) => {
       const {
         filePath
@@ -57,18 +67,28 @@ export default class Pack {
       //创建文件流
       const outputStream = fs.createWriteStream(filePath);
       outputStream.on('close', () => {
-        resolve(filePath);
+        resolve({
+          path: filePath,
+          size: filesize(fs.statSync(filePath).size),
+          counts: this.files.length,
+        });
       }).on('error', (err) => {
         reject(err);
       });
       //输出文件
-      zip.pipe(outputStream);
-      this.files.forEach((file) => {
-        zip.file(file, {
+      this.packUtil.pipe(outputStream);
+      this.files.forEach((file, index) => {
+        this.packUtil.file(file, {
           name: file
-        })
+        });
       })
-      zip.finalize();
+      this.listener.forEach(callback=>{
+         callback({
+          path: filePath,
+          counts: this.files.length,
+        });
+      });
+      this.packUtil.finalize();
     })
   }
   matchFile(_path = this.options.rootDir) {
@@ -78,7 +98,6 @@ export default class Pack {
     const files = fs.readdirSync(_path);
     files.forEach((file: string) => {
       const filePath = path.normalize(_path + '/' + file);
-
       const info = fs.statSync(filePath);
       if (info.isDirectory()) {
         this.matchFile(filePath);

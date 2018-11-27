@@ -5,6 +5,8 @@ import inquirer from 'inquirer';
 export default class SSH {
 
   private client: Client;
+  private listener: { [index: string]: any } = {};
+
   /**
    * 后缀
    */
@@ -65,6 +67,10 @@ export default class SSH {
       });
     })
   }
+  on(name: string, callback: any) {
+    this.listener[name] = callback;
+    return this;
+  }
   /**
    * 上传文件
    */
@@ -74,12 +80,21 @@ export default class SSH {
         if (err) {
           reject(err);
         }
-        sftp.fastPut(source, remoteTarget + '/' + path.basename(source), (err: any) => {
-          if (err) {
-            return reject(err);
-          }
-          resolve(true);
-        });
+        sftp.fastPut(source, remoteTarget + '/' + path.basename(source),
+          {
+            step:  (processed, chunk, total)=> {
+              this.listener['progress']({
+                total,
+                processed,
+              });
+            }
+          }, (err: any) => {
+            if (err) {
+              return reject(err);
+            }
+            this.listener = [];
+            resolve(true);
+          });
       });
     });
   }

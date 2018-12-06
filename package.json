@@ -36,6 +36,7 @@
   "types": "@type/index.d.ts",
   "dependencies": {
     "@types/archiver": "^2.1.2",
+    "@types/blessed": "^0.1.10",
     "@types/chalk": "^2.2.0",
     "@types/filesize": "^3.6.0",
     "@types/inquirer": "0.0.43",
@@ -53,6 +54,7 @@
     "ssh2": "^0.6.1"
   },
   "devDependencies": {
+    "blessed": "^0.1.81",
     "cross-env": "^5.2.0",
     "ts-node": "^7.0.1",
     "typescript": "^3.1.6"

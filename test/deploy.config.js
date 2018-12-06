@@ -1,22 +1,16 @@
 
 module.exports = {
-  rootDir: __dirname + '/../',
+  rootDir: __dirname + '/../.git/',
   output: {
     path: __dirname + '/zip',
     filename: `build.zip`,
   },
-  server:{
-    host: 'api.t.yyx-tech.com',
-    username: 'web',
+  server: {
+    host: '127.0.0.1',
+    username: 'exvu',
     port: 22,
-    path: '/home/web/'
+    path: __dirname + '/test/',
   },
-  // server: {
-  //   host: 'api.t.yyx-tech.com',
-  //   username: 'exvu',
-  //   port: 22,
-  //   path: '/home/exvu/Project/my-project/js-util/deploy/test/'
-  // },
   shell: [
     'ls',
     'exit',

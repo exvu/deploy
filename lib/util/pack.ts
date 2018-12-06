@@ -62,7 +62,7 @@ export default class Pack {
   zip() {
     return new Promise((resolve, reject) => {
       const {
-        filePath
+        filePath,rootDir
       } = this.options;
       //创建文件流
       const outputStream = fs.createWriteStream(filePath);
@@ -78,8 +78,9 @@ export default class Pack {
       //输出文件
       this.packUtil.pipe(outputStream);
       this.files.forEach((file, index) => {
+        console.log(rootDir+file);
         this.packUtil.file(file, {
-          name: file
+          name: rootDir+file
         });
       })
       this.listener.forEach(callback=>{

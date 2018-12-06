@@ -1,6 +1,6 @@
 
 module.exports = {
-  rootDir: __dirname + '/../.git/',
+  rootDir: __dirname + '/../lib/',
   output: {
     path: __dirname + '/zip',
     filename: `build.zip`,
@@ -9,6 +9,7 @@ module.exports = {
     host: '127.0.0.1',
     username: 'exvu',
     port: 22,
+    password:'exvu8023YUN',
     path: __dirname + '/test/',
   },
   shell: [

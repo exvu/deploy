@@ -18,7 +18,7 @@ export default class Logger extends Dashboard {
     steps(text: string) {
         this.setData([{
             type: 'steps',
-            value: `${this.step++}.${text}`,
+            value: chalk.green(`${this.step++}.${text}`),
         }]);
     }
     entrypassword(text:string){

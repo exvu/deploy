@@ -78,9 +78,8 @@ export default class Pack {
       //输出文件
       this.packUtil.pipe(outputStream);
       this.files.forEach((file, index) => {
-        console.log(rootDir+file);
-        this.packUtil.file(file, {
-          name: rootDir+file
+        this.packUtil.file(rootDir+file, {
+          name:file
         });
       })
       this.listener.forEach(callback=>{

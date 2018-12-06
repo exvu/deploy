@@ -77,8 +77,8 @@ export default class Deploy {
      */
     async uploadFile(filePath: string) {
         const host = `${this.configs.server.username}@${this.configs.server.host}`;
+        this.logger.steps(`上传打包文件到服务器`);
         this.logger.log(`上传打包文件到服务器 ${chalk.green(host + ':' + this.configs.server.path)}`);
-        let bar: any = null;
         await this.sshClient.on('progress', ({ total, processed, }: any) => {
             const scale = parseInt((processed / total).toFixed(2));
             this.logger.progress(scale);
@@ -89,9 +89,9 @@ export default class Deploy {
      * 执行远程命令
      */
     async shell() {
-        this.logger.log('执行远程命令');
+        this.logger.steps('执行远程命令');
         await this.sshClient.shell(this.configs.shell.map((item: string) => item + '\n').join(''));
-        this.logger.log('删除压缩文件,并退出程序');
+        this.logger.log('删除压缩文件,请按esc退出程序');
     }
     async start() {
         try {
@@ -102,7 +102,7 @@ export default class Deploy {
             await this.shell();
 
         } catch (e) {
-            this.logger.log(e.message);
+            this.logger.fail(e.message);
             throw e;
         } finally {
             const {

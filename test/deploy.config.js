@@ -1,6 +1,6 @@
 
 module.exports = {
-  rootDir: __dirname + '/../lib/',
+  rootDir: __dirname + '/../',
   output: {
     path: __dirname + '/zip',
     filename: `build.zip`,
@@ -13,7 +13,8 @@ module.exports = {
     path: __dirname + '/test/',
   },
   shell: [
-    'ls',
+    'cd1 '+ __dirname + '/test/',
+    'unzip -d ./build build.zip',
     'exit',
   ],
   rules: [

@@ -1,54 +1,59 @@
 
 import fs from 'fs';
 import path from 'path';
-import filesize from 'filesize';
 import Pack from './util/pack';
 import SSH from './util/ssh';
 import chalk from 'chalk';
 import Logger from './util/Logger';
+import { message } from 'blessed';
 
-export default class Deploy {
+export default class Deploy extends Logger {
 
-    private logger: Logger;
     private configs: { [index: string]: any };
     private configPath: string;
     private sshClient: any;
     constructor(context: any) {
+        super();
         const {
             cwd, argv: { config: configPath = cwd + '/deploy.config.js' },
         } = context;
         this.configPath = path.normalize(path.isAbsolute(configPath) ? configPath : cwd + '/' + configPath);
         this.configs = {};
-        this.logger = new Logger();
+    }
+    sleep(second: number = 1) {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                resolve(true);
+            }, second * 1000);
+        });
     }
     /**
      * 加载配置文件
      */
-    initConfigFile() {
-        this.logger.steps('加载配置文件')
+    async initConfigFile() {
         if (!fs.existsSync(this.configPath)) {
-            this.logger.fail(`配置文件不存在(${chalk.red(this.configPath)})`);
+            this.fail(`配置文件不存在(${chalk.red(this.configPath)})`);
         }
         this.configs = require(this.configPath);
         //读取配置文件
-        this.logger.succees(`加载配置文件成功`);
-        this.logger.log(`\t${this.configPath}`);
+        this.succees(`加载配置文件成功`);
+        await this.sleep();
+        this.log(`\t${this.configPath}`);
     }
     /**
      * 打包文件
      */
     async packFiles() {
-        this.logger.steps('打包文件');
         //打包文件
         const file: any = await (new Pack({
             rootDir: this.configs.rootDir,
             output: this.configs.output,
             rules: this.configs.rules,
         })).on('progress', ({ entries: { total, processed, } }: { entries: any }) => {
-            this.logger.progress(processed/total*100);
+            this.progress(processed / total * 100);
         }).zip();
-        this.logger.succees('打包文件成功');
-        this.logger.log(`\t${file.path} ${chalk.green(file.size)}(${file.counts}个文件)`);
+        this.succees('打包文件成功');
+        this.log(`\t${file.path} ${chalk.green(file.size)}(${file.counts}个文件)`);
         return file;
     }
     /**
@@ -58,18 +63,18 @@ export default class Deploy {
         //设置sshClient参数
         this.sshClient = new SSH(this.configs.server);
         const host = `${this.configs.server.username}@${this.configs.server.host}`;
-        this.logger.steps('连接服务器');
+
         let repeat = false;
         // while (true) {
-            try {
-                // await this.logger.entrypassword(`请输入服务器密码`);
-                await this.sshClient.connect();
-                this.logger.succees(`成功连接远程服务器 ${chalk.green(host)}`);
-                // break;
-            } catch (e) {
-                this.logger.fail('服务器链接失败,请检查账号或密码是否正确');
-                repeat = true;
-            }
+        try {
+            await this.entrypassword(`请输入服务器密码`);
+            await this.sshClient.connect();
+            this.succees(`成功连接远程服务器 ${chalk.green(host)}`);
+            // break;
+        } catch (e) {
+            this.fail('服务器链接失败,请检查账号或密码是否正确');
+            repeat = true;
+        }
         // }
     }
     /**
@@ -77,32 +82,65 @@ export default class Deploy {
      */
     async uploadFile(filePath: string) {
         const host = `${this.configs.server.username}@${this.configs.server.host}`;
-        this.logger.steps(`上传打包文件到服务器`);
-        this.logger.log(`上传打包文件到服务器 ${chalk.green(host + ':' + this.configs.server.path)}`);
+        this.log(`上传打包文件到服务器 ${chalk.green(host + ':' + this.configs.server.path)}`);
         await this.sshClient.on('progress', ({ total, processed, }: any) => {
-            const scale = parseInt((processed / total).toFixed(2));
-            this.logger.progress(scale);
+            const scale = parseInt((processed / total) * 100 + '');
+            this.progress(scale);
         }).uploadFile(filePath, this.configs.server.path);
-        this.logger.log(`文件已上传到服务器 ${chalk.green(host + ':' + this.configs.server.path)}`);
+        this.log(`文件已上传到服务器 ${chalk.green(host + ':' + this.configs.server.path)}`);
     }
     /**
      * 执行远程命令
      */
     async shell() {
-        this.logger.steps('执行远程命令');
-        await this.sshClient.shell(this.configs.shell.map((item: string) => item + '\n').join(''));
-        this.logger.log('删除压缩文件,请按esc退出程序');
+        const data = await this.sshClient.shell(this.configs.shell.map((item: string) => item + '\n').join(''));
+        this.log(data);
     }
     async start() {
         try {
-            this.initConfigFile();
-            const { path: filePath } = await this.packFiles();
-            await this.connectServer();
-            await this.uploadFile(filePath);
-            await this.shell();
+            let filePath: string;
+            this.initSteps([
+                {
+                    key: 'initConfig',
+                    label: '加载配置文件',
+                    func: async () => {
+                        await this.initConfigFile();
+                    }
+                },
+                {
+                    key: 'pack',
+                    label: '打包文件',
+                    func: async () => {
+                        const { path } = await this.packFiles();
+                        filePath = path;
+                    }
+                },
+                {
+                    key: 'connect',
+                    label: '连接到服务器',
+                    func: async () => {
+                        await this.connectServer();
+                    }
+                },
+                {
+                    key: 'upload',
+                    label: '上传文件到服务器',
+                    func: async () => {
+                        await this.uploadFile(filePath);
+                    }
+                },
+                {
+                    key: 'upload',
+                    label: '执行远程命令',
+                    func: async () => {
+                        await this.shell();
+                    }
+                }
+            ]);
+            await this.run();
 
         } catch (e) {
-            this.logger.fail(e.message);
+            this.fail(e.message);
             throw e;
         } finally {
             const {
@@ -113,6 +151,5 @@ export default class Deploy {
                 fs.unlinkSync(filePath);
             }
         }
-        // process.exit(0);
     }
 }

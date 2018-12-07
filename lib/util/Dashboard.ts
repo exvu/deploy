@@ -18,75 +18,73 @@ export default class Dashboard {
     private color: string;
     private actionForMessageType: any;
     protected _logger: Widgets.BoxElement | null = null;
-    protected _modal: Widgets.BoxElement | null = null;
+    protected _modal: Widgets.PromptElement | null = null;
     protected _loggerText: Widgets.Log | null = null;
-    protected _steps: Widgets.BoxElement | null = null;
-    protected _stepsText: Widgets.Log | null = null;
-    protected _assets: Widgets.BoxElement | null = null;
+    protected _steps: Widgets.ListElement | null = null;
     protected _progress: Widgets.BoxElement | null = null;
     protected _progressBar: Widgets.ProgressBarElement | null = null;
     private assetTable: Widgets.TableElement | null = null;
     constructor() {
-        this.screen = blessed.screen({
-            smartCSR: true,
+        const options: any = {
+            resizeTimeout: 300,
             dockBorders: true,
+            cursor: {
+                artificial: true,
+                shape: 'line',
+                blink: true,
+                color: null
+            },
+            debug: true,
+            warnings: true,
+            smartCSR: true,
             fullUnicode: true,
             autoPadding: true,
-        });
+        };
+        this.screen = blessed.screen(options);
         this.actionForMessageType = {
             progress: this.setProgress.bind(this),
             logger: this.setLogger.bind(this),
-            assets: this.setAssest.bind(this),
             steps: this.setSteps.bind(this),
         };
-        this.screen.key(['escape','C-c'], function () {
+        this.screen.key(['escape', 'C-c'], function () {
             return process.exit(0);
         });
         this.color = 'green';
         this.layoutLog();
-        this.layoutAssets();
         this.layoutSteps();
         this.layoutProgress();
         this.screen.render();
     }
     protected layoutModal(options: any) {
-        this._modal = blessed.box(Object.assign({
-            label: "Modal",
-            padding: 1,
-            top: 'center',
-            left: 'center',
-            detached: true,
-            content: '',
-            width: '40%',
-            height: '40%',
-            border: {
-                type: 'line',
-            },
-            tags: true,
-            style: {
-                fg: 'white',
-                bold: true,
-                border: {
-                    fg: 'red',
-                },
-                hover: {
-                    bg: 'green'
-                }
-            }
-        }, options));
-        // this._modal.readInput('Input: ','2',(data)=>{
-        //    console.log(data);
+        // this._modal = blessed.prompt(Object.assign({
+        //     label: "Modal",
+        //     padding: 1,
+        //     top: 'center',
+        //     left: 'center',
+        //     width: '40%',
+        //     height: '40%',
+        //     censor: '*',
+        //     mouse: true,
+        //     inputOnFocus: true,
+        //     border: {
+        //       type: 'line',
+        //     },
+        // }, options));
+        // this._modal.readInput('你好','',()=>{
+        //     this.setSteps({
+        //         value:1,
+        //     })
         // });
-        this.screen.append(this._modal);
+        // this.screen.append(this._modal);
     }
     private layoutProgress() {
         this._progress = blessed.box({
             label: "Progress",
             padding: 1,
-            width: '35%',
+            width: '20%',
             height: '20%',
-            right: 0,
-            top: 0,
+            left: 0,
+            bottom: 0,
             border: {
                 type: 'line'
             },
@@ -121,9 +119,10 @@ export default class Dashboard {
         this._logger = blessed.box({
             label: "Log",
             padding: 1,
-            width: '100%',
-            height: '40%',
-            bottom: 0,
+            width: '80%',
+            height: '100%',
+            top:0,
+            right:0,
             border: {
                 type: 'line'
             },
@@ -132,7 +131,16 @@ export default class Dashboard {
                 border: {
                     fg: this.color,
                 },
-            }
+            },
+            scrollbar: {
+                ch: ' ',
+                track: {
+                  bg: 'yellow'
+                },
+                style: {
+                  inverse: true
+                }
+              }
         });
         this._loggerText = blessed.log(
             Object.assign({}, DEFAULT_SCROLL_OPTIONS, {
@@ -145,62 +153,51 @@ export default class Dashboard {
         this.screen.append(this._logger);
     }
     private layoutSteps() {
-        this._steps = blessed.box({
-            label: "Steps",
-            padding: 1,
-            width: '35%',
-            height: '40%',
-            top: '20%',
-            right: 0,
-            border: {
-                type: 'line'
-            },
-            style: {
-                fg: -1,
-                border: {
-                    fg: this.color,
-                },
-            }
-        });
-        this._stepsText = blessed.log(
-            Object.assign({}, DEFAULT_SCROLL_OPTIONS, {
-                parent: this._steps,
-                tags: true,
-                width: "100%-5"
-            })
-        );
 
-        this.screen.append(this._steps);
-    }
-    private layoutAssets() {
-        this._assets = blessed.box({
-            label: "Assets",
+        const option: any = {
+            label: "Steps",
+            // mouse: true,
             padding: 1,
-            width: '65%',
-            height: '60%',
+            width: '20%',
+            height: '80%',
+            top: '0',
             left: 0,
-            top: 0,
+            tags: true,
+            invertSelected: false,
             border: {
                 type: 'line'
             },
             style: {
-                fg: -1,
+                fg: 'blue',
+                bg: 'default',
                 border: {
                     fg: this.color,
+                    bg: 'default'
                 },
+                selected: {
+                    bg: 'green'
+                },
+            },
+            scrollbar: {
+              ch: ' ',
+              track: {
+                bg: 'yellow'
+              },
+              style: {
+                inverse: true
+              }
+            }
+        }
+
+        this._steps = blessed.list(option);
+        this._steps.on('select', (item, select) => {
+            if (this._steps) {
+                console.log(1);
+                this._steps.select(select);
+                this._steps.focus();
             }
         });
-        this.assetTable = blessed.table(
-            Object.assign({}, DEFAULT_SCROLL_OPTIONS, {
-                parent: this._assets,
-                height: "100%",
-                width: "100%-5",
-                align: "left",
-                padding: 1,
-                data: [["Name", "Size"]]
-            })
-        );
-        this.screen.append(this._assets);
+        this.screen.append(this._steps);
     }
     private setProgress(data: any) {
         const percent = parseFloat(data.value) * 1;
@@ -218,17 +215,12 @@ export default class Dashboard {
             this._loggerText.log(data.value.replace(/[{}]/g, ""));
         }
     }
-    private setSteps(data: any) {
-        if (this._stepsText) {
-            this._stepsText.log(data.value.replace(/[{}]/g, ""));
+    protected setSteps(data: any) {
+        if (this._steps) {
+            data.forEach(this._steps.addItem.bind(this._steps))
+            this._steps.select(0);
         }
-    }
-    private setAssest(data: any) {
-        const { _assets } = data.value;
-        if (this.assetTable) {
-            this.assetTable.setData(helper.formatAssets(_assets));
-        }
-        this.screen.render();
+      
     }
     setData(dataArray: Array<{ [index: string]: any }>) {
         dataArray.map(data => {

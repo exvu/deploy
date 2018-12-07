@@ -76,26 +76,30 @@ export default class SSH {
    */
   public uploadFile(source: string, remoteTarget: string) {
     return new Promise((resolve, reject) => {
-      this.client.sftp((err, sftp) => {
-        if (err) {
-          reject(err);
-        }
-        sftp.fastPut(source, remoteTarget + '/' + path.basename(source),
-          {
-            step:  (processed, chunk, total)=> {
-              this.listener['progress']({
-                total,
-                processed,
-              });
-            }
-          }, (err: any) => {
-            if (err) {
-              return reject(err);
-            }
-            this.listener = [];
-            resolve(true);
-          });
-      });
+      try {
+        this.client.sftp((err, sftp) => {
+          if (err) {
+            reject(err);
+          }
+          sftp.fastPut(source, remoteTarget + '/' + path.basename(source),
+            {
+              step: (processed, chunk, total) => {
+                this.listener['progress']({
+                  total,
+                  processed,
+                });
+              }
+            }, (err: any) => {
+              if (err) {
+                return reject(err);
+              }
+              this.listener = [];
+              resolve(true);
+            });
+        });
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 }

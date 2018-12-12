@@ -37,7 +37,6 @@
   "dependencies": {
     "@types/archiver": "^2.1.2",
     "@types/blessed": "^0.1.10",
-    "@types/chalk": "^2.2.0",
     "@types/filesize": "^3.6.0",
     "@types/inquirer": "0.0.43",
     "@types/node": "^10.12.9",
@@ -51,10 +50,10 @@
     "inquirer": "^6.2.0",
     "ora": "^3.0.0",
     "progress": "^2.0.1",
-    "ssh2": "^0.6.1"
+    "ssh2": "^0.6.1",
+    "blessed": "^0.1.81"
   },
   "devDependencies": {
-    "blessed": "^0.1.81",
     "cross-env": "^5.2.0",
     "ts-node": "^7.0.1",
     "typescript": "^3.1.6"

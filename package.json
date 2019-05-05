@@ -44,14 +44,15 @@
     "@types/progress": "^2.0.1",
     "@types/ssh2": "^0.5.36",
     "archiver": "^3.0.0",
+    "blessed": "^0.1.81",
     "chalk": "^2.4.1",
     "common-bin": "^2.8.0",
     "filesize": "^3.6.1",
     "inquirer": "^6.2.0",
+    "json-format": "^1.0.1",
     "ora": "^3.0.0",
     "progress": "^2.0.1",
-    "ssh2": "^0.6.1",
-    "blessed": "^0.1.81"
+    "ssh2": "^0.6.1"
   },
   "devDependencies": {
     "cross-env": "^5.2.0",

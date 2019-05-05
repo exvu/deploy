@@ -23,7 +23,7 @@ export default class SSH {
       this.client.on('ready', () => {
         resolve(true);
       }).on('error', (err) => {
-        reject(err);
+        reject('服务器连接错误:'+err);
       }).connect(this.optionos);
     });
 
@@ -31,7 +31,7 @@ export default class SSH {
   /**
    * 执行命令
    */
-  public shell(cmd: string) {
+  public shells(cmd: string) {
     return new Promise((resolve, reject) => {
       this.client.shell((err, stream) => {
         if (err) reject(err);
@@ -75,13 +75,14 @@ export default class SSH {
    * 上传文件
    */
   public uploadFile(source: string, remoteTarget: string) {
+    const remotePath = remoteTarget + '/' + path.basename(source)
     return new Promise((resolve, reject) => {
       try {
         this.client.sftp((err, sftp) => {
           if (err) {
             reject(err);
           }
-          sftp.fastPut(source, remoteTarget + '/' + path.basename(source),
+          sftp.fastPut(source, remotePath,
             {
               step: (processed, chunk, total) => {
                 this.listener['progress']({
@@ -91,7 +92,7 @@ export default class SSH {
               }
             }, (err: any) => {
               if (err) {
-                return reject(err);
+                return reject(new Error(err.errno==-4058?'本地:'+err.message:('服务器SFTP错误:'+err.message+remotePath)));
               }
               this.listener = [];
               resolve(true);

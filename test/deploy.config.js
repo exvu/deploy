@@ -1,19 +1,22 @@
 
 module.exports = {
-  rootDir: __dirname + '/../',
+  //部署目录
+  rootPath: __dirname + '/../',
+  //压缩配置
   output: {
+    format: 'zip',
     path: __dirname + '/zip',
-    filename: `build.zip`,
+    filename: `build`,
   },
   server: {
     host: '127.0.0.1',
-    username: 'exvu',
+    username: 'test',
     port: 22,
-    password:'exvu8023YUN',
-    path: __dirname + '/test/',
+    password: 'test',
+    path: '/home/web/test',
   },
-  shell: [
-    'cd1 '+ __dirname + '/test/',
+  shells: [
+    'cd /home/web/test',
     'unzip -d ./build build.zip',
     'exit',
   ],

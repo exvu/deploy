@@ -5,7 +5,7 @@ import Pack from './util/pack';
 import SSH from './util/ssh';
 import chalk from 'chalk';
 import Logger from './util/Logger';
-import { message } from 'blessed';
+import jsonFormat  from 'json-format'
 
 export default class Deploy extends Logger {
 
@@ -35,10 +35,13 @@ export default class Deploy extends Logger {
             this.fail(`配置文件不存在(${chalk.red(this.configPath)})`);
         }
         this.configs = require(this.configPath);
+
+        this.configs.output.filename =this.configs.output.filename+'.'+this.configs.output.format;
         //读取配置文件
         this.succees(`加载配置文件成功`);
         await this.sleep();
         this.log(`\t${this.configPath}`);
+        this.log(jsonFormat (this.configs));
     }
     /**
      * 打包文件
@@ -46,7 +49,7 @@ export default class Deploy extends Logger {
     async packFiles() {
         //打包文件
         const file: any = await (new Pack({
-            rootDir: this.configs.rootDir,
+            rootPath: this.configs.rootPath,
             output: this.configs.output,
             rules: this.configs.rules,
         })).on('progress', ({ entries: { total, processed, } }: { entries: any }) => {
@@ -72,7 +75,7 @@ export default class Deploy extends Logger {
             this.succees(`成功连接远程服务器 ${chalk.green(host)}`);
             // break;
         } catch (e) {
-            this.fail('服务器链接失败,请检查账号或密码是否正确');
+            throw new Error('服务器链接失败,请检查账号或密码是否正确');
             repeat = true;
         }
         // }
@@ -82,7 +85,8 @@ export default class Deploy extends Logger {
      */
     async uploadFile(filePath: string) {
         const host = `${this.configs.server.username}@${this.configs.server.host}`;
-        this.log(`上传打包文件到服务器 ${chalk.green(host + ':' + this.configs.server.path)}`);
+        this.log(`打包文件地址：${chalk.green(filePath)}`);
+        this.log(`上传到服务器：${chalk.green(host + ':' + this.configs.server.path)}`);
         await this.sshClient.on('progress', ({ total, processed, }: any) => {
             const scale = parseInt((processed / total) * 100 + '');
             this.progress(scale);
@@ -92,8 +96,8 @@ export default class Deploy extends Logger {
     /**
      * 执行远程命令
      */
-    async shell() {
-        const data = await this.sshClient.shell(this.configs.shell.map((item: string) => item + '\n').join(''));
+    async shells() {
+        const data = await this.sshClient.shells(this.configs.shells.map((item: string) => item + '\n').join(''));
         this.log(data);
     }
     async start() {
@@ -133,7 +137,7 @@ export default class Deploy extends Logger {
                     key: 'upload',
                     label: '执行远程命令',
                     func: async () => {
-                        await this.shell();
+                        await this.shells();
                     }
                 }
             ]);
@@ -141,10 +145,9 @@ export default class Deploy extends Logger {
 
         } catch (e) {
             this.fail(e.message);
-            throw e;
         } finally {
             const {
-                output: { path: _path, filename, }
+                output: { path: _path, filename }
             } = this.configs;
             const filePath = path.normalize(_path + filename);
             if (fs.existsSync(filePath)) {

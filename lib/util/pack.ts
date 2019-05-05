@@ -5,7 +5,7 @@ import filesize from 'filesize';
 
 
 interface Option {
-  rootDir: string,
+  rootPath: string,
   output: { path: string, filename: string },
   rules: Array<{
     test: RegExp
@@ -20,7 +20,7 @@ export default class Pack {
   private listener:Array<any>=[];
   constructor(_option: any) {
     let {
-      rootDir, output: { path: outputPath, filename }
+      rootPath, output: { path: outputPath, filename,format }
       , rules,
     } = _option;
     const filePath = path.normalize(outputPath + '/' + filename);
@@ -38,9 +38,9 @@ export default class Pack {
         test = new RegExp(test);
       }
     }
-    this.packUtil = archiver('zip');
+    this.packUtil = archiver(format);
     this.options = {
-      rootDir: path.normalize(rootDir),
+      rootPath: path.normalize(rootPath),
       rules,
       output: {
         path: outputPath, filename,
@@ -62,7 +62,7 @@ export default class Pack {
   zip() {
     return new Promise((resolve, reject) => {
       const {
-        filePath,rootDir
+        filePath,rootPath
       } = this.options;
       //创建文件流
       const outputStream = fs.createWriteStream(filePath);
@@ -78,7 +78,7 @@ export default class Pack {
       //输出文件
       this.packUtil.pipe(outputStream);
       this.files.forEach((file, index) => {
-        this.packUtil.file(rootDir+file, {
+        this.packUtil.file(rootPath+file, {
           name:file
         });
       })
@@ -91,7 +91,7 @@ export default class Pack {
       this.packUtil.finalize();
     })
   }
-  matchFile(_path = this.options.rootDir) {
+  matchFile(_path = this.options.rootPath) {
     const {
       rules,
     } = this.options;
@@ -104,7 +104,7 @@ export default class Pack {
       } else {
         rules.every(({ test: regex, }: { test: RegExp, }) => {
           if (regex.test(filePath)) {
-            this.files.push(filePath.replace(this.options.rootDir, ''));
+            this.files.push(filePath.replace(this.options.rootPath, ''));
             return false;
           }
           return true;

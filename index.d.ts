@@ -4,8 +4,6 @@ declare module 'common-bin' {
     start(): void;
   }
 }
-// declare module 'progress' {
-//   export default class Progress {
-//     constructor(options: any);
-//   }
-// }
+declare module 'json-format' {
+  export default function jsonformatter(config:any): any;
+}

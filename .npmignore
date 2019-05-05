@@ -6,3 +6,5 @@ test
 package-lock.json
 .vscode
 tsconfig.json
+yarn.lock
+yarn-error.log

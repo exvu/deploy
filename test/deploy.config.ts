@@ -1,7 +1,7 @@
 import { defineConfig } from "../lib/";
 export default defineConfig({
   host: "59.110.167.48",
-  localRoot: __dirname + "/../src",
+  localRoot: __dirname + "/../lib",
   remoteRoot: "",
   deleteRemote: true,
   includes: ["*", "**/*"],

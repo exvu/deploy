@@ -25,12 +25,14 @@ class Logger extends Dashboard_1.default {
     }
     log(text) {
         if (this.steps[this.loggerType]) {
-            this.steps[this.loggerType]['loggers'].push(text);
+            this.steps[this.loggerType]["loggers"].push(text);
         }
-        this.setData([{
-                type: 'logger',
-                value: text,
-            }]);
+        this.setData([
+            {
+                type: "logger",
+                value: text.replace(/[{]/gi, "【").replace(/[}]/gi, "】"),
+            },
+        ]);
     }
     fail(text) {
         this.log(chalk_1.default.red(text));
@@ -46,6 +48,9 @@ class Logger extends Dashboard_1.default {
     }
     async next() {
         this.stepIndex++;
+        if (!this.steps[this.stepIndex]) {
+            return;
+        }
         const _a = this.steps[this.stepIndex], { func } = _a, data = __rest(_a, ["func"]);
         if (this._steps && this._logger && this._loggerText) {
             this._steps.select(this.stepIndex);
@@ -61,14 +66,16 @@ class Logger extends Dashboard_1.default {
     entrypassword(text) {
         this.layoutModal({
             label: text,
-            content: '',
+            content: "",
         });
     }
     progress(percent) {
-        this.setData([{
-                type: 'progress',
+        this.setData([
+            {
+                type: "progress",
                 value: percent,
-            }]);
+            },
+        ]);
     }
 }
 exports.default = Logger;

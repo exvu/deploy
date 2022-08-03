@@ -8,13 +8,13 @@ const path_1 = __importDefault(require("path"));
 const chalk_1 = __importDefault(require("chalk"));
 const Logger_1 = __importDefault(require("./util/Logger"));
 const json_format_1 = __importDefault(require("json-format"));
-const promise_ftp_1 = __importDefault(require("promise-ftp"));
-const ssh2_sftp_client_1 = __importDefault(require("ssh2-sftp-client"));
+const Client_1 = __importDefault(require("./util/Client"));
 class Deploy extends Logger_1.default {
     constructor(context) {
         super();
-        const { cwd, argv: { config: configPath = cwd + '/deploy.config.ts' }, } = context;
-        this.configPath = path_1.default.normalize(path_1.default.isAbsolute(configPath) ? configPath : cwd + '/' + configPath);
+        this.client = new Client_1.default();
+        const { cwd, argv: { config: configPath = cwd + "/deploy.config.ts" }, } = context;
+        this.configPath = path_1.default.normalize(path_1.default.isAbsolute(configPath) ? configPath : cwd + "/" + configPath);
     }
     sleep(second = 1) {
         return new Promise((resolve, reject) => {
@@ -32,8 +32,9 @@ class Deploy extends Logger_1.default {
         }
         this.configs = require(this.configPath).default;
         //读取配置文件
-        this.success(`加载配置文件成功${this.configPath}`);
+        this.success(`===============配置文件： ${this.configPath}==============`);
         this.success((0, json_format_1.default)(this.configs));
+        await this.client.checkIncludes(this.configs);
         await this.sleep();
         this.next();
     }
@@ -41,51 +42,49 @@ class Deploy extends Logger_1.default {
      * 链接远程服务器
      */
     async connectServer() {
-        //设置sshClient参数
-        if (this.configs.protocol == 'ftp') {
-            this.ftpClient = new promise_ftp_1.default();
-            this.ftpClient.connect({
-                password: this.configs.auth.password,
-                user: this.configs.auth.username,
-                port: this.configs.port,
-                host: this.configs.host,
-            }).then((serverMessage) => {
-                // console.log(serverMessage);
-            });
+        try {
+            //设置sshClient参数
+            const serverMessage = await this.client.connect(this.configs);
+            this.success("===============成功连接远程服务器 ${chalk.green(this.configs.host)}==============");
+            this.success(serverMessage + "\n\n\n");
+            this.next();
         }
-        else {
-            this.sftpClient = new ssh2_sftp_client_1.default();
-            this.sftpClient.connect({
-                password: this.configs.auth.password,
-                username: this.configs.auth.username,
-                port: this.configs.port,
-                host: this.configs.host,
-            });
+        catch (e) {
+            this.fail("===============登录失败==============");
+            this.fail("服务器链接失败,请检查账号或密码是否正确");
+            this.fail(e.message);
         }
-        // // while (true) {
-        // try {
-        //     await this.entrypassword(`请输入服务器密码`);
-        //     await this.sshClient.connect();
-        //     this.success(`成功连接远程服务器 ${chalk.green(host)}`);
-        //     // break;
-        // } catch (e) {
-        //     throw new Error('服务器链接失败,请检查账号或密码是否正确');
-        //     repeat = true;
-        // }
-        // }
+    }
+    checkLocalAndUpload(config) {
+        var _a, _b;
+        try {
+            this.client.register("upload-file-end", (file) => {
+                this.success(`上传成功:${file}`);
+            });
+            let filemap = this.client.parseLocal((_a = config.includes) !== null && _a !== void 0 ? _a : [], (_b = config.excludes) !== null && _b !== void 0 ? _b : [], config.localRoot, "/");
+            // console.log(filemap);
+            this.success("需要上传的文件数量: " + this.client.countFiles(filemap));
+            return this.client.makeAllAndUpload(filemap);
+        }
+        catch (e) {
+            throw e;
+        }
     }
     /**
      * 上传文件
      */
-    async uploadFile(filePath) {
-        // const host = `${this.configs.server.username}@${this.configs.server.host}`;
-        // this.log(`打包文件地址：${chalk.green(filePath)}`);
-        // this.log(`上传到服务器：${chalk.green(host + ':' + this.configs.server.path)}`);
-        // await this.sshClient.on('progress', ({ total, processed, }: any) => {
-        //     const scale = parseInt((processed / total) * 100 + '');
-        //     this.progress(scale);
-        // }).uploadFile(filePath, this.configs.server.path);
-        // this.log(`文件已上传到服务器 ${chalk.green(host + ':' + this.configs.server.path)}`);
+    async uploadFile() {
+        try {
+            if (this.configs.deleteRemote) {
+                await this.client.deleteRemote();
+                this.success("删除文件成功");
+            }
+        }
+        catch (e) {
+            this.fail("删除文件失败");
+        }
+        this.checkLocalAndUpload(this.configs);
+        this.next();
     }
     /**
      * 执行远程命令
@@ -95,41 +94,43 @@ class Deploy extends Logger_1.default {
         // this.log(data);
     }
     async start() {
-        process.on('unhandledRejection', (reason, p) => {
-            console.log('Promise: ', p, 'Reason: ', reason);
-            p.catch(e => {
+        process.on("unhandledRejection", (reason, p) => {
+            //   console.log("Promise: ", p, "Reason: ", reason);
+            p.catch((e) => {
                 this.fail(e.stack);
             });
         });
+        process.on("uncaughtException", (err) => {
+            this.fail(err.messsage);
+        });
         try {
-            let filePath;
             this.initSteps([
                 {
-                    key: 'initConfig',
-                    label: '加载配置文件',
-                    func: this.initConfigFile
+                    key: "initConfig",
+                    label: "加载配置文件",
+                    func: this.initConfigFile,
                 },
                 {
-                    key: 'connect',
-                    label: '连接到服务器',
+                    key: "connect",
+                    label: "连接到服务器",
                     func: async () => {
                         await this.connectServer();
-                    }
+                    },
                 },
                 {
-                    key: 'upload',
-                    label: '上传文件到服务器',
+                    key: "upload",
+                    label: "上传文件到服务器",
                     func: async () => {
-                        await this.uploadFile(filePath);
-                    }
+                        await this.uploadFile();
+                    },
                 },
                 {
-                    key: 'upload',
-                    label: '执行远程命令',
+                    key: "upload",
+                    label: "上传成功",
                     func: async () => {
-                        await this.shells();
-                    }
-                }
+                        this.success("文件上传成功");
+                    },
+                },
             ]);
             await this.run();
         }

@@ -27,7 +27,7 @@ class Pack {
                 test = new RegExp(test);
             }
         }
-        this.packUtil = archiver_1.default(format);
+        this.packUtil = (0, archiver_1.default)(format);
         this.options = {
             rootPath: path_1.default.normalize(rootPath),
             rules,
@@ -56,7 +56,7 @@ class Pack {
             outputStream.on('close', () => {
                 resolve({
                     path: filePath,
-                    size: filesize_1.default(fs_1.default.statSync(filePath).size),
+                    size: (0, filesize_1.default)(fs_1.default.statSync(filePath).size),
                     counts: this.files.length,
                 });
             }).on('error', (err) => {

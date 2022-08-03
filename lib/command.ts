@@ -1,15 +1,14 @@
-import CommandBin from 'common-bin';
-import Deploy from './deploy';
-
+import CommandBin from "common-bin";
+import path from "path";
 
 export default class Command extends CommandBin {
-
-  private usage: string;
   constructor(rawArgv?: any) {
     super(rawArgv);
-    this.usage = 'Usage: deploy <command> [options]';
+    this.usage = "使用说明: 工具文档 ";
+    this.add("run", path.join(__dirname, "/cmd/run.ts"));
+    this.add("init", path.join(__dirname, "/cmd/init.ts"));
+
+    this.version = "2.0";
   }
-  run(context: any) {
-    new Deploy(context).start();
-  }
+  run(context: any) {}
 }

@@ -62,31 +62,33 @@ class Client {
     register(name, func) {
         this.registerList[name] = func;
     }
+    log(text) {
+        if (this.registerList["log"]) {
+            this.registerList["log"](text);
+        }
+    }
     parseLocal(includes, excludes, localRootDir, relDir) {
         // reducer
         let handleItem = (acc, item) => {
             const currItem = path_1.default.join(fullDir, item);
             const newRelDir = path_1.default.relative(localRootDir, currItem);
+            const filePath = currItem.replace(localRootDir, "");
+            //是目录
             if (fs_1.default.lstatSync(currItem).isDirectory()) {
-                // currItem is a directory. Recurse and attach to accumulator
-                let tmp = this.parseLocal(includes, excludes, localRootDir, newRelDir);
-                for (let key in tmp) {
-                    if (tmp[key].length == 0) {
-                        delete tmp[key];
-                    }
+                //目录就加/*匹配目录
+                if (this.canIncludePath(includes, excludes, filePath + "/*")) {
+                    let tmp = this.parseLocal(includes, excludes, localRootDir, newRelDir);
+                    acc = Object.assign(acc, tmp);
                 }
-                return Object.assign(acc, tmp);
+                //解析下面所有的文件
             }
             else {
-                // currItem is a file
-                // acc[relDir] is always created at previous iteration
+                //单文件
                 if (this.canIncludePath(includes, excludes, newRelDir)) {
-                    // console.log("including", currItem);
                     if (!acc[relDir]) {
                         acc[relDir] = [];
                     }
                     acc[relDir].push(item);
-                    return acc;
                 }
             }
             return acc;
@@ -104,14 +106,18 @@ class Client {
         return res;
     }
     canIncludePath(includes, excludes, filePath) {
-        let go = (acc, item) => acc || (0, minimatch_1.default)(filePath, item, { matchBase: true });
+        let go = (acc, item) => acc || minimatch_1.default(filePath, item, { matchBase: true });
         let canInclude = includes.reduce(go, false);
         // Now check whether the file should in fact be specifically excluded
         if (canInclude) {
             // if any excludes match return false
             if (excludes) {
-                let go2 = (acc, item) => acc && !(0, minimatch_1.default)(filePath, item, { matchBase: true });
-                canInclude = excludes.reduce(go2, true);
+                let go2 = (acc, item) => {
+                    const res = minimatch_1.default(filePath, item, { matchBase: true });
+                    return acc || res;
+                };
+                const canEnclude = excludes.reduce(go2, false);
+                return canEnclude ? false : canInclude;
             }
         }
         // console.log("canIncludePath", include, filePath, res);

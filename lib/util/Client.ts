@@ -1,3 +1,4 @@
+import jsonFormat from "json-format";
 import { Config } from "./Config";
 import path from "path";
 import PromiseBlue from "bluebird";
@@ -59,8 +60,13 @@ export default class Client {
   public async deleteRemote() {
     return this.deleteDir(this.configs.remoteRoot);
   }
-  register(name: "upload-file-end", func: Function) {
+  register(name: "upload-file-end" | "log", func: Function) {
     this.registerList[name] = func;
+  }
+  log(text: string) {
+    if (this.registerList["log"]) {
+      this.registerList["log"](text);
+    }
   }
   parseLocal(
     includes: string[],
@@ -75,26 +81,27 @@ export default class Client {
     ) => {
       const currItem = path.join(fullDir, item);
       const newRelDir = path.relative(localRootDir, currItem);
-
+      const filePath = currItem.replace(localRootDir, "");
+      //是目录
       if (fs.lstatSync(currItem).isDirectory()) {
-        // currItem is a directory. Recurse and attach to accumulator
-        let tmp = this.parseLocal(includes, excludes, localRootDir, newRelDir);
-        for (let key in tmp) {
-          if (tmp[key].length == 0) {
-            delete tmp[key];
-          }
+        //目录就加/*匹配目录
+        if (this.canIncludePath(includes, excludes, filePath + "/*")) {
+          let tmp = this.parseLocal(
+            includes,
+            excludes,
+            localRootDir,
+            newRelDir
+          );
+          acc = Object.assign(acc, tmp);
         }
-        return Object.assign(acc, tmp);
+        //解析下面所有的文件
       } else {
-        // currItem is a file
-        // acc[relDir] is always created at previous iteration
+        //单文件
         if (this.canIncludePath(includes, excludes, newRelDir)) {
-          // console.log("including", currItem);
           if (!acc[relDir]) {
             acc[relDir] = [];
           }
           acc[relDir].push(item);
-          return acc;
         }
       }
       return acc;
@@ -122,9 +129,13 @@ export default class Client {
     if (canInclude) {
       // if any excludes match return false
       if (excludes) {
-        let go2 = (acc: boolean, item: string) =>
-          acc && !minimatch(filePath, item, { matchBase: true });
-        canInclude = excludes.reduce(go2, true);
+        let go2 = (acc: boolean, item: string) => {
+          const res = minimatch(filePath, item, { matchBase: true });
+
+          return acc || res;
+        };
+        const canEnclude = excludes.reduce(go2, false);
+        return canEnclude ? false : canInclude;
       }
     }
     // console.log("canIncludePath", include, filePath, res);

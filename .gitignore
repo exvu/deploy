@@ -6,3 +6,4 @@ package-lock.json
 *.zip
 yarn.lock
 yarn-error.log
+deploy_error.log

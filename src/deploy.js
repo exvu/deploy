@@ -12,8 +12,8 @@ const Client_1 = __importDefault(require("./util/Client"));
 class Deploy extends Logger_1.default {
     constructor(context) {
         super();
-        this.client = new Client_1.default();
-        const { cwd, argv: { config: configPath = cwd + "/deploy.config.ts" }, } = context;
+        this.filemap = {};
+        const { cwd, argv: { config: configPath = cwd + "/deploy.config.js" }, } = context;
         this.configPath = path_1.default.normalize(path_1.default.isAbsolute(configPath) ? configPath : cwd + "/" + configPath);
     }
     sleep(second = 1) {
@@ -27,15 +27,17 @@ class Deploy extends Logger_1.default {
      * 加载配置文件
      */
     async initConfigFile(data) {
+        this.success(`错误日志请查看deploy_error.log`);
         if (!fs_1.default.existsSync(this.configPath)) {
             this.fail(`配置文件不存在(${chalk_1.default.red(this.configPath)})`);
         }
-        this.configs = require(this.configPath).default;
+        this.configs = Object.assign({ protocol: "ftp", debug: false }, require(this.configPath));
         //读取配置文件
         this.success(`===============配置文件： ${this.configPath}==============`);
-        this.success((0, json_format_1.default)(this.configs));
+        if (this.configs.debug) {
+            this.success(json_format_1.default(this.configs));
+        }
         await this.client.checkIncludes(this.configs);
-        await this.sleep();
         this.next();
     }
     /**
@@ -55,16 +57,25 @@ class Deploy extends Logger_1.default {
             this.fail(e.message);
         }
     }
-    checkLocalAndUpload(config) {
-        var _a, _b;
+    async checkLocalAndUpload(config) {
         try {
             this.client.register("upload-file-end", (file) => {
                 this.success(`上传成功:${file}`);
             });
-            let filemap = this.client.parseLocal((_a = config.includes) !== null && _a !== void 0 ? _a : [], (_b = config.excludes) !== null && _b !== void 0 ? _b : [], config.localRoot, "/");
-            // console.log(filemap);
-            this.success("需要上传的文件数量: " + this.client.countFiles(filemap));
-            return this.client.makeAllAndUpload(filemap);
+            return this.client.makeAllAndUpload(this.filemap);
+        }
+        catch (e) {
+            throw e;
+        }
+    }
+    async calcFile() {
+        var _a, _b;
+        try {
+            const config = this.configs;
+            this.filemap = this.client.parseLocal((_a = config.includes) !== null && _a !== void 0 ? _a : [], (_b = config.excludes) !== null && _b !== void 0 ? _b : [], config.localRoot, "/");
+            // this.success(jsonFormat(this.filemap));
+            this.success("需要上传的文件数量: " + this.client.countFiles(this.filemap));
+            this.next();
         }
         catch (e) {
             throw e;
@@ -83,7 +94,7 @@ class Deploy extends Logger_1.default {
         catch (e) {
             this.fail("删除文件失败");
         }
-        this.checkLocalAndUpload(this.configs);
+        await this.checkLocalAndUpload(this.configs);
         this.next();
     }
     /**
@@ -94,6 +105,14 @@ class Deploy extends Logger_1.default {
         // this.log(data);
     }
     async start() {
+        this.client = new Client_1.default();
+        let i = 0;
+        this.client.register("log", (text) => {
+            if (i < 100) {
+                this.fail(text, false);
+            }
+            i++;
+        });
         process.on("unhandledRejection", (reason, p) => {
             //   console.log("Promise: ", p, "Reason: ", reason);
             p.catch((e) => {
@@ -109,6 +128,11 @@ class Deploy extends Logger_1.default {
                     key: "initConfig",
                     label: "加载配置文件",
                     func: this.initConfigFile,
+                },
+                {
+                    key: "calcFile",
+                    label: "计算文件",
+                    func: this.calcFile,
                 },
                 {
                     key: "connect",

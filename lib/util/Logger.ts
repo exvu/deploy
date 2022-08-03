@@ -1,6 +1,12 @@
 import Dashboard from "./Dashboard";
 import chalk from "chalk";
-
+import log4js from "log4js";
+log4js.configure({
+  appenders: { cheese: { type: "file", filename: "deploy_error.log" } },
+  categories: { default: { appenders: ["cheese"], level: "ALL" } },
+});
+const logger = log4js.getLogger("cheese");
+logger.clearContext();
 export default class Logger extends Dashboard {
   private steps: Array<{ [index: string]: any }> = [];
   private stepIndex: number = 0;
@@ -9,6 +15,8 @@ export default class Logger extends Dashboard {
     if (this.steps[this.loggerType]) {
       this.steps[this.loggerType]["loggers"].push(text);
     }
+    text = text.replace(/[{]/gi, "【").replace(/[}]/gi, "】");
+
     this.setData([
       {
         type: "logger",
@@ -16,10 +24,17 @@ export default class Logger extends Dashboard {
       },
     ]);
   }
-  fail(text: string) {
+  fail(text: string, file = true) {
+    if (file) {
+      logger.error(text);
+    }
+
     this.log(chalk.red(text));
   }
-  success(text: string) {
+  success(text: string, file = true) {
+    if (file) {
+      logger.info(text);
+    }
     this.log(chalk.green(text));
   }
   initSteps(data: any) {

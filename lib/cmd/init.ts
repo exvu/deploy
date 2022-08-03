@@ -12,6 +12,11 @@ export default class InitCommand extends CommandBin {
         type: "string",
         alias: "c",
       },
+      force: {
+        description: "强制覆盖",
+        type: "boolean",
+        alias: "f",
+      },
     };
   }
   get description() {
@@ -20,19 +25,19 @@ export default class InitCommand extends CommandBin {
   run(context: any) {
     const {
       cwd,
-      argv: { config = "deploy.config.ts" },
+      argv: { config = "deploy.config.js", force },
     } = context;
     if (path.extname(config) != ".js") {
       return console.error("文件必须以.js结尾");
     }
     const configPath = path.normalize(cwd + "/" + config);
 
-    if (fs.existsSync(configPath)) {
+    if (fs.existsSync(configPath) && !force) {
       console.warn("文件已存在");
     } else {
       fs.writeFileSync(
         configPath,
-        fs.readFileSync(__dirname + "/../../demo/deploy.config.js")
+        fs.readFileSync(path.normalize(__dirname + "/../../demo/deploy.config"))
       );
       console.warn("初始化成功");
     }

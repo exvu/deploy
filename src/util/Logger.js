@@ -16,6 +16,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const Dashboard_1 = __importDefault(require("./Dashboard"));
 const chalk_1 = __importDefault(require("chalk"));
+const log4js_1 = __importDefault(require("log4js"));
+log4js_1.default.configure({
+    appenders: { cheese: { type: "file", filename: "deploy_error.log" } },
+    categories: { default: { appenders: ["cheese"], level: "ALL" } },
+});
+const logger = log4js_1.default.getLogger("cheese");
+logger.clearContext();
 class Logger extends Dashboard_1.default {
     constructor() {
         super(...arguments);
@@ -27,6 +34,7 @@ class Logger extends Dashboard_1.default {
         if (this.steps[this.loggerType]) {
             this.steps[this.loggerType]["loggers"].push(text);
         }
+        text = text.replace(/[{]/gi, "【").replace(/[}]/gi, "】");
         this.setData([
             {
                 type: "logger",
@@ -34,10 +42,16 @@ class Logger extends Dashboard_1.default {
             },
         ]);
     }
-    fail(text) {
+    fail(text, file = true) {
+        if (file) {
+            logger.error(text);
+        }
         this.log(chalk_1.default.red(text));
     }
-    success(text) {
+    success(text, file = true) {
+        if (file) {
+            logger.info(text);
+        }
         this.log(chalk_1.default.green(text));
     }
     initSteps(data) {

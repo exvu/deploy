@@ -1,6 +1,6 @@
 {
   "name": "@exvu/deploy",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "本地代码部署的服务器",
   "license": "ISC",
   "main": "./src/index.js",
